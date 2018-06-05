@@ -129,6 +129,7 @@ public class MotionTools : EditorWindow {
 		MotionData.Axis mirrorAxis = Data[0].MirrorAxis;
 		LayerMask groundMask = Data[0].GroundMask;
 		LayerMask objectMask = Data[0].ObjectMask;
+		Vector3[] corrections = Data[0].Corrections;
 		//
 
 		for(int i=0; i<Data.Length; i++) {
@@ -156,6 +157,11 @@ public class MotionTools : EditorWindow {
 				if(Data[i].ObjectMask != objectMask) {
 					errors += 1;
 				}
+				for(int j=0; j<corrections.Length; j++) {
+					if(Data[i].Corrections[j] != corrections[j]) {
+						errors += 1;
+					}
+				}
 			}
 		}
 		Debug.Log("Errors: " + errors);
@@ -175,10 +181,13 @@ public class MotionTools : EditorWindow {
 							sequences += 1;
 							for(int f=intervals[interval].Start; f<=intervals[interval].End; f++) {
 								frames += 1;
-								for(int index=0; index<Data[i].Frames[f].StyleValues.Length; index++) {
-									if(Data[i].Frames[f].StyleFlags[index]) {
+								for(int index=0; index<Data[i].GetFrame(f).StyleValues.Length; index++) {
+									if(Data[i].GetFrame(f).StyleFlags[index]) {
 										styles[index] += 1;
 									}
+									//if(Data[i].Frames[f].StyleValues[index] > 0f) {
+									//	styles[index] += 1;
+									//}
 								}
 							}
 						}
@@ -197,11 +206,13 @@ public class MotionTools : EditorWindow {
 	}
 
 	private void SearchStyle() {
-		int style = System.Array.FindIndex(Data[0].Styles, x => x == "Jump");
+		int style = System.Array.FindIndex(Data[0].Styles, x => x == "Sit");
 		for(int i=0; i<Data.Length; i++) {
-			for(int j=0; j<Data[i].Frames.Length; j++) {
-				if(Data[i].Frames[j].IsStyleKey(style) && Data[i].Frames[j].StyleFlags[style]) {
-					Debug.Log("Jump at frame " + j + " in file " + Data[i]);
+			for(int s=0; s<Data[i].Sequences.Length; s++) {
+				for(int f=Data[i].Sequences[s].Start; f<=Data[i].Sequences[s].End; f++) {
+					if((Data[i].GetFrame(f).IsStyleKey(style) || f==Data[i].Sequences[s].Start) && Data[i].GetFrame(f).StyleFlags[style]) {
+						Debug.Log("Style at frame " + f + " in file " + Data[i]);
+					}
 				}
 			}
 		}
@@ -210,23 +221,35 @@ public class MotionTools : EditorWindow {
 	private void ProcessData() {
         for(int i=0; i<Data.Length; i++) {
         	if(Active[i]) {
-				
+				/*
 				for(int s=0; s<Data[i].Sequences.Length; s++) {
+					//Idle
+					Data[i].Sequences[s].SetStyleCopies("Idle", 0);
+					Data[i].Sequences[s].SetTransitionCopies("Idle", 0);
+
+					//Walk
+					Data[i].Sequences[s].SetStyleCopies("Walk", 0);
+					Data[i].Sequences[s].SetTransitionCopies("Walk", 0);
+
+					//Pace
+					Data[i].Sequences[s].SetStyleCopies("Pace", 0);
+					Data[i].Sequences[s].SetTransitionCopies("Pace", 0);
+
 					//Trot
-					Data[i].Sequences[s].SetStyleCopies("Trot", 9);
-					Data[i].Sequences[s].SetTransitionCopies("Trot", 9);
+					Data[i].Sequences[s].SetStyleCopies("Trot", 6);
+					Data[i].Sequences[s].SetTransitionCopies("Trot", 6);
 
 					//Canter
 					Data[i].Sequences[s].SetStyleCopies("Canter", 1);
 					Data[i].Sequences[s].SetTransitionCopies("Canter", 1);
 
 					//Jump
-					Data[i].Sequences[s].SetStyleCopies("Jump", 10);
-					Data[i].Sequences[s].SetTransitionCopies("Jump", 10);
+					Data[i].Sequences[s].SetStyleCopies("Jump", 9);
+					Data[i].Sequences[s].SetTransitionCopies("Jump", 9);
 
 					//Sit
 					Data[i].Sequences[s].SetStyleCopies("Sit", 0);
-					Data[i].Sequences[s].SetTransitionCopies("Sit", 5);
+					Data[i].Sequences[s].SetTransitionCopies("Sit", 0);
 
 					//Stand
 					Data[i].Sequences[s].SetStyleCopies("Stand", 0);
@@ -236,8 +259,15 @@ public class MotionTools : EditorWindow {
 					Data[i].Sequences[s].SetStyleCopies("Lie", 0);
 					Data[i].Sequences[s].SetTransitionCopies("Lie", 5);
 				}
-				
-				//Data[i].MotionSmoothing = 1;
+				*/
+				string path = AssetDatabase.GetAssetPath(Data[i]);
+				path = path.Substring(0, path.LastIndexOf(".")) + ".unity";
+				SceneAsset scene = AssetDatabase.LoadAssetAtPath<SceneAsset>(path);
+				Data[i].Scene = scene;
+				Data[i].Sequences[0].SetStart(1);
+				Data[i].Sequences[0].SetEnd(Data[i].GetTotalFrames());
+				Data[i].SetUnitScale(10f);
+				Data[i].RootSmoothing = 10;
              	EditorUtility.SetDirty(Data[i]);
             }
 		}

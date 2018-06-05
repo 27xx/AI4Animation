@@ -52,12 +52,22 @@ public class Trajectory {
 		return length;
 	}
 
-	public float GetLength(int start, int end) {
+	public float GetLength(int start, int end, int step) {
 		float length = 0f;
-		for(int i=start+1; i<end; i++) {
-			length += Vector3.Distance(Points[i-1].GetPosition(), Points[i].GetPosition());
+		for(int i=0; i<end-step; i+=step) {
+			length += Vector3.Distance(Points[i+step].GetPosition(), Points[i].GetPosition());
 		}
 		return length;
+	}
+	
+	public float GetCurvature(int start, int end, int step) {
+		float curvature = 0f;
+		for(int i=step; i<end-step; i+=step) {
+			curvature += Vector3.SignedAngle(Points[i].GetPosition() - Points[i-step].GetPosition(), Points[i+step].GetPosition() - Points[i].GetPosition(), Vector3.up);
+		}
+		curvature = Mathf.Abs(curvature);
+		curvature = Mathf.Clamp(curvature / 180f, 0f, 1f);
+		return curvature;
 	}
 
 	public void Postprocess() {
@@ -188,34 +198,12 @@ public class Trajectory {
 	public void Draw(int step=1) {
 		UltiDraw.Begin();
 
+		//Color[] colors = UltiDraw.GetRainbowColors(Styles);
+
 		//Connections
 		for(int i=0; i<Points.Length-step; i+=step) {
 			UltiDraw.DrawLine(Points[i].GetPosition(), Points[i+step].GetPosition(), 0.01f, UltiDraw.Black);
 		}
-
-		//Styles and Speed
-		/*
-		for(int i=0; i<Points.Length; i+=step) {
-			float r = 0f;
-			float g = 0f;
-			float b = 0f;
-			for(int j=0; j<Points[i].Styles.Length; j++) {
-				r += Points[i].Styles[j] * Colors[j].r;
-				g += Points[i].Styles[j] * Colors[j].g;
-				b += Points[i].Styles[j] * Colors[j].b;
-			}
-			UltiDraw.DrawCube(Points[i].GetPosition(), Points[i].GetRotation(), 0.05f, new Color(r, g, b, 1f));
-			UltiDraw.DrawArrow(Points[i].GetPosition(), Points[i].GetPosition() + Points[i].GetSpeed() * Points[i].GetTransformation().GetForward(), 0.8f, 0.02f, 0.04f, new Color(r, g, b, 0.5f));
-		}
-		*/		
-
-		//Projections
-		//for(int i=0; i<Points.Length; i+=step) {
-		//	Vector3 right = Points[i].GetRightSample();
-		//	Vector3 left = Points[i].GetLeftSample();
-		//	UltiDraw.DrawCircle(right, 0.01f, UltiDraw.Yellow);
-		//	UltiDraw.DrawCircle(left, 0.01f, UltiDraw.Yellow);
-		//}
 
 		//Velocities
 		for(int i=0; i<Points.Length; i+=step) {
@@ -223,17 +211,19 @@ public class Trajectory {
 			//Vector3 end = Points[i].GetPosition() + Points[i].GetVelocity();
 			//end = Utility.ProjectGround(end, LayerMask.GetMask("Ground"));
 			//UltiDraw.DrawLine(start, end, 0.025f, 0f, UltiDraw.DarkGreen.Transparent(0.5f));
+			
 			/*
 			float r = 0f;
 			float g = 0f;
 			float b = 0f;
 			for(int j=0; j<Points[i].Styles.Length; j++) {
-				r += Points[i].Styles[j] * Colors[j].r;
-				g += Points[i].Styles[j] * Colors[j].g;
-				b += Points[i].Styles[j] * Colors[j].b;
+				r += Points[i].Styles[j] * colors[j].r;
+				g += Points[i].Styles[j] * colors[j].g;
+				b += Points[i].Styles[j] * colors[j].b;
 			}
+			UltiDraw.DrawLine(Points[i].GetPosition(), Points[i].GetPosition() + Points[i].GetVelocity(), 0.025f, 0f, new Color(r, g, b, 0.5f));
 			*/
-			//UltiDraw.DrawLine(Points[i].GetPosition(), Points[i].GetPosition() + Points[i].GetVelocity(), 0.025f, 0f, new Color(r, g, b, 0.5f));
+
 			UltiDraw.DrawLine(Points[i].GetPosition(), Points[i].GetPosition() + Points[i].GetVelocity(), 0.025f, 0f, UltiDraw.DarkGreen.Transparent(0.5f));
 		}
 
@@ -245,6 +235,44 @@ public class Trajectory {
 			//UltiDraw.DrawLine(start, end, 0.025f, 0f, UltiDraw.Orange.Transparent(0.75f));
 			UltiDraw.DrawLine(Points[i].GetPosition(), Points[i].GetPosition() + 0.25f*Points[i].GetDirection(), 0.025f, 0f, UltiDraw.Orange.Transparent(0.75f));
 		}
+
+		/*
+		//Styles
+		for(int i=0; i<Points.Length; i+=step) {
+			float r = 0f;
+			float g = 0f;
+			float b = 0f;
+			for(int j=0; j<Points[i].Styles.Length; j++) {
+				r += Points[i].Styles[j] * colors[j].r;
+				g += Points[i].Styles[j] * colors[j].g;
+				b += Points[i].Styles[j] * colors[j].b;
+			}
+			UltiDraw.DrawCube(Points[i].GetPosition(), Points[i].GetRotation(), 0.05f, new Color(r, g, b, 1f));
+		}
+		*/
+
+		/*
+		//Speed
+		for(int i=0; i<Points.Length; i+=step) {
+			float r = 0f;
+			float g = 0f;
+			float b = 0f;
+			for(int j=0; j<Points[i].Styles.Length; j++) {
+				r += Points[i].Styles[j] * colors[j].r;
+				g += Points[i].Styles[j] * colors[j].g;
+				b += Points[i].Styles[j] * colors[j].b;
+			}
+			UltiDraw.DrawArrow(Points[i].GetPosition(), Points[i].GetPosition() + Points[i].GetSpeed() * Points[i].GetTransformation().GetForward(), 0.8f, 0.02f, 0.04f, new Color(r, g, b, 0.5f));
+		}
+		*/
+
+		//Projections
+		//for(int i=0; i<Points.Length; i+=step) {
+		//	Vector3 right = Points[i].GetRightSample();
+		//	Vector3 left = Points[i].GetLeftSample();
+		//	UltiDraw.DrawCircle(right, 0.01f, UltiDraw.Yellow);
+		//	UltiDraw.DrawCircle(left, 0.01f, UltiDraw.Yellow);
+		//}
 
 		//Slopes
 		//for(int i=0; i<Points.Length; i+=step) {

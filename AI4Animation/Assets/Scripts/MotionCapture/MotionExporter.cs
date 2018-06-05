@@ -84,7 +84,7 @@ public class MotionExporter : EditorWindow {
                 }
 				
 				Framerate = EditorGUILayout.IntField("Framerate", Framerate);
-				BatchSize = Mathf.Max(1, EditorGUILayout.IntField("Batch Size", BatchSize));	
+				BatchSize = Mathf.Max(1, EditorGUILayout.IntField("Batch Size", BatchSize));
 
 				using(new EditorGUILayout.VerticalScope ("Box")) {
 					EditorGUILayout.BeginHorizontal();
@@ -275,7 +275,6 @@ public class MotionExporter : EditorWindow {
 
 		int sequence = 0;
 		int items = 0;
-
         for(int i=0; i<Animations.Length; i++) {
             if(Export[i]) {
                 EditorSceneManager.OpenScene(AssetDatabase.GetAssetPath(Animations[i].Scene));
@@ -305,7 +304,7 @@ public class MotionExporter : EditorWindow {
 										editor.SetMirror(true);
 									}
 									editor.LoadFrame(t);
-									MotionEditor.FrameState state = editor.GetState();
+									MotionState state = editor.GetState();
 
 									line += sequence + Separator;
 									line += state.Index + Separator;
@@ -409,8 +408,8 @@ public class MotionExporter : EditorWindow {
 						}
 					}
                 }
-            }
-        }
+       		}
+		}
 
         yield return new WaitForSeconds(0f);
         
